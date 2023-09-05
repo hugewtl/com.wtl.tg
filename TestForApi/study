@@ -1,0 +1,7 @@
+//设置编译环境参数
+SET CGO_ENABLED=0
+SET GOOS=linux
+SET GOARCH=amd64
+//编译程序
+go build main.go 
+go run main.go

@@ -1,0 +1,6 @@
+2023-08-28 15:14:15,497 INFO (StartupInfoLogger.java:55)- Starting TgApplicationTests using Java 1.8.0_181 on DESKTOP-H6A0MQC with PID 4320 (started by zh88896 in D:\goWork\src\JSpring\tg)
+2023-08-28 15:14:15,499 INFO (SpringApplication.java:631)- No active profile set, falling back to 1 default profile: "default"
+2023-08-28 15:18:47,393 INFO (StartupInfoLogger.java:55)- Starting TgApplicationTests using Java 1.8.0_181 on DESKTOP-H6A0MQC with PID 20176 (started by zh88896 in D:\goWork\src\JSpring\tg)
+2023-08-28 15:18:47,393 INFO (SpringApplication.java:631)- No active profile set, falling back to 1 default profile: "default"
+2023-08-28 15:19:18,122 INFO (StartupInfoLogger.java:55)- Starting TgApplicationTests using Java 1.8.0_181 on DESKTOP-H6A0MQC with PID 14692 (started by zh88896 in D:\goWork\src\JSpring\tg)
+2023-08-28 15:19:18,154 INFO (SpringApplication.java:631)- No active profile set, falling back to 1 default profile: "default"

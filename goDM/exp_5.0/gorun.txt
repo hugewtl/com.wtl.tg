@@ -1,0 +1,12 @@
+go run dbConnector.go readParams.go rule_json.go amrule.go amrule_mysql.go am_tmpl_param.go am_template.go am_sys_param.go am_method.go am_method_param.go am_list_name.go am_indic.go escape.go
+go build -o ExpAmRuleExt.exe dbConnector.go readParams.go rule_json.go amrule.go amrule_mysql.go am_tmpl_param.go am_template.go am_sys_param.go am_method.go am_method_param.go am_list_name.go am_indic.go escape.go
+
+
+SELECT * FROM T_USER_APPINFO 
+WHERE user_id=(
+SELECT id FROM am_user WHERE username='xindun'
+);
+
+#交易类型（业务、枚举）、应用管理、t_user_appinfo、am_appinfo、
+#规则集am_rule_set、规则集版本记录am_ruleset_history、am_rule
+#场景am_scenes、am_scenes_history、am_scenes_strategy
