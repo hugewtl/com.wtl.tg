@@ -1,0 +1,10 @@
+GetSQLFile.class
+ReadParams.class
+GetTargetSet.class
+DBInit.class
+GetColumns.class
+LoggerLog.class
+MyAmRule.class
+MyIndicator.class
+Escape.class
+DBConnector.class
