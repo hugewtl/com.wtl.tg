@@ -1,0 +1,11 @@
+2023-09-14 17:38:23.989 [main] INFO  LoggerLog - com.mysql.cj.jdbc.ConnectionImpl@5762806e The target database session connected and executing Query SQL!
+2023-09-14 17:38:23.992 [main] INFO  LoggerLog - com.mysql.cj.jdbc.ConnectionImpl@5762806e The target database session connected and executing Delete SQL!
+2023-09-14 17:38:23.992 [main] INFO  LoggerLog - DELETE FROM am_list_data WHERE 1 = ?  AND list_value = ?;
+2023-09-14 17:38:24.100 [main] INFO  LoggerLog - 1
+2023-09-14 17:38:24.100 [main] INFO  LoggerLog - 删除数据记录： 1 条！
+2023-09-14 17:38:24.100 [main] INFO  LoggerLog - am_list_data 表数据删除完成 !
+2023-09-14 17:40:04.779 [main] INFO  LoggerLog - com.mysql.cj.jdbc.ConnectionImpl@5762806e The target database session connected and executing Query SQL!
+2023-09-14 17:40:04.787 [main] INFO  LoggerLog - com.mysql.cj.jdbc.ConnectionImpl@5762806e The target database session connected and executing Delete SQL!
+2023-09-14 17:40:04.787 [main] INFO  LoggerLog - DELETE FROM am_list_data WHERE 1 = ?  AND list_value = ?;
+2023-09-14 17:40:04.803 [main] INFO  LoggerLog - 0
+2023-09-14 17:40:04.803 [main] INFO  LoggerLog - am_list_data 未执行删除 !
