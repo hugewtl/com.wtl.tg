@@ -1,2 +1,2 @@
-GoRedisPipeline.exe
+GRedisRemMems.exe
 pause...

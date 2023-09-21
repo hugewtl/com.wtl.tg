@@ -13,12 +13,49 @@ import (
 	"gopkg.in/redis.v5"
 )
 
+/*删除目标zset中的指定范围【min,max】成员*/
+func ZRemTargetKeys(redisdb *redis.Client, targetKey chan string, min string, max string, master string, funcFlag int) bool {
+	/*
+		对目标数据进行删除操作
+	*/
+	for {
+		key, ok := <-targetKey
+		if !ok {
+			break
+		}
+		sumRemMems_rem := redisdb.ZRemRangeByScore(key, min, max)
+
+		if sumRemMems_rem.Val() > 0 {
+			/*
+				删除元素计数器
+			*/
+			sumRemMems += sumRemMems_rem.Val()
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			if funcFlag == 1 {
+				keyChan_chk2 <- key
+			}
+			if funcFlag == 2 {
+				keyChan_chk1 <- key
+			}
+		}
+
+		if err != nil {
+			panic(err)
+		} else {
+			log.Printf("%v 已删除 [ %v ] 中成员目标【withscores: %v--->%v】数据.", master, key, min, max)
+		}
+	}
+
+	return true
+}
+
 /*
 通过扫描目标key数据，删除zset成员数据
 注:SCAN 命令用于迭代当前数据库中的数据库键。
 go redis pipeline
 */
-func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, keyChanRm chan string) bool {
+func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, keyChanRm chan string, master string) bool {
 	var keysMap = make(map[string]string, 5000)
 	var cursor uint64
 	var n int
@@ -28,7 +65,6 @@ func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, key
 	for {
 		var keys = make([]string, 20)
 		keys, cursor, err = redisdb.Scan(cursor, KeyPattern, 1000).Result()
-
 		if err != nil {
 			panic(err)
 		}
@@ -39,27 +75,31 @@ func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, key
 				//处理zset类型key:将key发送给keyChan
 				keyChan <- key
 				if delMems {
+					/*需要发送给两种score类型的队列*/
 					keyChanRm <- key
 				}
 				keysMap[key] = key
-				log.Printf("Zset类型的key: %v \n", key)
+				log.Printf("%v Zset类型的key from client: %v \n", master, key)
 			}
 		}
-
+		/*
+		   使用pipeline减少网络交互次数
+		*/
 		for cursor != 0 {
+			// log.Printf("%v 当前cursor1: %v", master, cursor)
 			pipeline.Scan(cursor, KeyPattern, 1000)
 			cmdScaner, err := pipeline.Exec()
 			if err != nil {
 				panic(err)
 			}
+			// log.Printf("%v 当前cursor2: %v", master, cursor)
 			for _, cmder := range cmdScaner {
 				cmd := cmder.(*redis.ScanCmd)
 				keys, cursor, err = cmd.Result()
-				log.Printf("数据游标：%v", cursor)
+				// log.Printf("%v 当前cursor3: %v", master, cursor)
 				if err != nil {
 					panic(err)
 				}
-
 				for _, key := range keys {
 					/*将zset类型的key存到map中*/
 					n++
@@ -70,7 +110,7 @@ func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, key
 							keyChanRm <- key
 						}
 						keysMap[key] = key
-						log.Printf("Zset类型的key1: %v \n", key)
+						log.Printf("%v Zset类型的key from pipeline: %v \n", master, key)
 					}
 				}
 			}
@@ -90,22 +130,6 @@ func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, key
 
 	return isOver
 }
-
-// func PrintKeys(redisdb *redis.Client, keys []string, keyChan chan string, keyChanRm chan string) {
-// 	for _, key := range keys {
-// 		/*将zset类型的key存到map中*/
-// 		n++
-// 		if redisdb.Type(key).Val() == "zset" {
-// 			//处理zset类型key:将key发送给keyChan
-// 			keyChan <- key
-// 			if delMems {
-// 				keyChanRm <- key
-// 			}
-// 			keysMap[key] = key
-// 			log.Printf("Zset类型的key: %v \n", key)
-// 		}
-// 	}
-// }
 
 /*连接Redis Connector init*/
 func ConnRedisCluster(RClusterUrl string) (*redis.Client, error) {
@@ -144,17 +168,33 @@ func getCMasterNodes(redisdb *redis.Client) map[int]string {
 }
 
 /*
-** 保存修改rdb
- */
-func RbgSave(redisdb *redis.Client) {
-	pipeline := redisdb.Pipeline()
-	oldSave := pipeline.LastSave()
-	rSc := pipeline.BgSave()
-	newSave := pipeline.LastSave()
-	pipeline.Exec()
-	if rSc.String() == "bgsave: Background saving started" && newSave.Val() != oldSave.Val() {
-		log.Println("Background saving terminated with success!")
+保存修改rdb
+*/
+func RbgSave(redisdb *redis.Client, master string) {
+	// oldSave := redisdb.LastSave()
+	rSc := redisdb.BgSave()
+	if rSc.String() == "bgsave: Background saving started" {
+		log.Printf("%v --> %v --> %v \n", master, redisdb.LastSave().Val(), rSc)
+		log.Printf("%v Background saving terminated with success! \n", master)
 	}
+}
+
+func ifDirExist(path string) bool {
+	// 判断路径是否存在
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		// 路径不存在，创建它
+		err := os.MkdirAll(path, 0700)
+		if err != nil {
+			fmt.Println("创建路径失败:", err)
+			return false
+		}
+		fmt.Println("路径已创建:", path)
+		return true
+	} else {
+		fmt.Println("路径已存在:", path)
+		return true
+	}
+
 }
 
 /*
@@ -202,6 +242,7 @@ func initParams(filepath string) map[string]string {
 			/*
 				将参数赋值存储到map:ParamsMp
 			*/
+
 			ParamsMp[k] = v
 		}
 	}

@@ -21,4 +21,9 @@ var (
 	allKeys int
 	/*统计CPU耗时*/
 	sumTime int64
+	/*统计删除的数据量*/
+	sumRemMems int64
+	/*未被删除的数据的key,调用不同score类型函数再次尝试删除*/
+	keyChan_chk1 = make(chan string, 10000)
+	keyChan_chk2 = make(chan string, 10000)
 )
