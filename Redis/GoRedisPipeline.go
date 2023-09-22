@@ -11,6 +11,10 @@ import (
 )
 
 func main() {
+	if !ifDateValid() {
+		fmt.Println("WARNING: 非法的 lic , 请使用有效的 lic ！")
+		return
+	}
 	//初始化：加载配置文件
 	dateNow := time.Now().Format("200601021504")
 	initParams("config.conf")
