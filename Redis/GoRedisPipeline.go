@@ -49,7 +49,7 @@ func main() {
 	}
 
 	/*连接redis集群*/
-	if redisdb, err = ConnRedisCluster(ParamsMp["RedisNodesUrl"]); err != nil {
+	if redisdb, err = ConnRedisCluster(ParamsMp["RedisNodesUrl"], ParamsMp["Password"]); err != nil {
 		panic(err)
 	}
 	defer redisdb.Close()
@@ -66,7 +66,7 @@ func main() {
 	for _, master := range masterNodes {
 		/*连接master节点*/
 		rsingle := redis.NewClient(&redis.Options{})
-		if rsingle, err = ConnRedisCluster(master); err != nil {
+		if rsingle, err = ConnRedisCluster(master, ParamsMp["Password"]); err != nil {
 			panic(err)
 		}
 		defer rsingle.Close()
@@ -197,17 +197,19 @@ func main() {
 	/*
 	 * 全局判断，遍历完所有master节点后，关闭keyChan_chk1，keyChan_chk2
 	 */
-	wg.Add(1)
-	go func() {
-		for {
-			if len(chanChk) == len(masterNodes) {
-				close(keyChan_chk2)
-				close(keyChan_chk1)
-				wg.Done()
-				break
+	if delMems {
+		wg.Add(1)
+		go func() {
+			for {
+				if len(chanChk) == len(masterNodes) {
+					close(keyChan_chk2)
+					close(keyChan_chk1)
+					wg.Done()
+					break
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	wg.Wait()
 	fmt.Printf("所有keys数量为: %v \n", allKeys)

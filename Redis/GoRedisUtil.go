@@ -132,13 +132,14 @@ func ScanKeys(redisdb *redis.Client, KeyPattern string, keyChan chan string, key
 }
 
 /*连接Redis Connector init*/
-func ConnRedisCluster(RClusterUrl string) (*redis.Client, error) {
+func ConnRedisCluster(RClusterUrl string, password string) (*redis.Client, error) {
 	//3s超时退出
 	_, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 	redisdb = redis.NewClient(&redis.Options{
 		Addr:     RClusterUrl,
 		PoolSize: 200,
+		Password: password,
 	})
 	_, err = redisdb.Ping().Result()
 	if err != nil {
