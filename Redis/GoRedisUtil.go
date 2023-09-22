@@ -136,6 +136,21 @@ func ConnRedisCluster(RClusterUrl string, password string) (*redis.Client, error
 	//3s超时退出
 	_, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
+	if strings.Contains(RClusterUrl, ",") {
+		/*如果传值是备用节点列表，需要遍历备用节点并验证可用性，返回可用节点*/
+		for _, redisNodeBak := range strings.Split(RClusterUrl, ",") {
+			redisdb = redis.NewClient(&redis.Options{
+				Addr:     redisNodeBak,
+				PoolSize: 200,
+				Password: password,
+			})
+			if _, err = redisdb.Ping().Result(); err == nil {
+				/*找到可用节点就退出遍历*/
+				break
+			}
+		}
+		return redisdb, err
+	}
 	redisdb = redis.NewClient(&redis.Options{
 		Addr:     RClusterUrl,
 		PoolSize: 200,
@@ -155,8 +170,8 @@ func getCMasterNodes(redisdb *redis.Client) map[int]string {
 	//空格切割所有字符串
 	slicInfo := strings.Fields(rsc.String())
 	for i, substr := range slicInfo {
-		/*按数据排布规律，角色名称的上一个下标就是角色对应的IP:PORT*/
-		if strings.Contains(substr, "master") {
+		/*按数据排布规律，角色名称的上一个下标就是角色对应的IP:PORT,剔除fail的master节点，因为已转移*/
+		if strings.Contains(substr, "master") && !strings.Contains(substr, "master,fail") {
 			masterNodes[i] = slicInfo[i-1]
 		}
 	}

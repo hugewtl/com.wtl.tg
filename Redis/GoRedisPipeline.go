@@ -49,8 +49,12 @@ func main() {
 	}
 
 	/*连接redis集群*/
-	if redisdb, err = ConnRedisCluster(ParamsMp["RedisNodesUrl"], ParamsMp["Password"]); err != nil {
-		panic(err)
+	if redisdb, err = ConnRedisCluster(ParamsMp["RedisNodeUrl"], ParamsMp["Password"]); err != nil {
+		log.Printf("RedisNodeUrl refused !")
+		/*使用备用节点访问集群*/
+		if redisdb, err = ConnRedisCluster(ParamsMp["RedisNodesBackup"], ParamsMp["Password"]); err != nil {
+			log.Printf("RedisCluster refused !")
+		}
 	}
 	defer redisdb.Close()
 	/*获取集群所有节点信息*/
