@@ -1,6 +1,7 @@
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class GetSQLFile {
     public static void main(String[] args) {
@@ -104,8 +105,12 @@ public class GetSQLFile {
                 for (; !isOver;) {
                     String calId = MyAmRule.calId;
                     String fieldId = MyAmRule.fieldId;
+                    // 枚举字段名称
                     String enumId = MyAmRule.enumId;
                     if (!MyAmRule.calId.isEmpty()) {
+                        /**
+                         * 从AM_INDICATORS中关联到的主体数据再次提取：指标、字段
+                         */
                         gts.tableName = "AM_INDICATORS";
                         String sqlString_calId = "SELECT * FROM " + gts.tableName + " WHERE ID IN (" + MyAmRule.calId
                                 + ") AND 1 = ?;";
@@ -118,7 +123,6 @@ public class GetSQLFile {
                             /**
                              * am_indicators中提取到指标、字段数据
                              */
-
                             log.logging(gts.tableName + " 中新增提取" + (getLen(MyAmRule.calId) - getLen(calId)) + "个指标ID:"
                                     + MyAmRule.calId);
                             log.logging(
@@ -130,18 +134,14 @@ public class GetSQLFile {
                                     + ">查询结果集导出成功！");
                         }
                     }
-
+                    // 提取业务字段 和 枚举字段、枚举值
                     if (!MyAmRule.fieldId.isEmpty()) {
-                        // 提取业务字段 和 枚举字段
                         gts.tableName = "AM_ENUMERATE_FIELD";
-                        if (!MyAmRule.enumId.isEmpty()) {
-                            MyAmRule.fieldId = MyAmRule.fieldId + "," + MyAmRule.enumId;
-                        }
                         String sqlString_fieldId = "SELECT * FROM " + gts.tableName + " WHERE FIELD_VALUE IN ("
                                 + MyAmRule.fieldId
                                 + ") AND 1 = ?;";
                         /**
-                         * 为了复用函数，传个恒真值给占位符
+                         * 为了复用函数，传个恒真值给占位符：业务字段和枚举字段
                          */
                         String[] paramStr_fieldId = new String[1];
                         paramStr_fieldId[0] = "1";
@@ -149,12 +149,60 @@ public class GetSQLFile {
                             log.logging(gts.tableName + " 提取< " + getLen(MyAmRule.fieldId) + " 个字段值:" + MyAmRule.fieldId
                                     + ">查询结果集导出成功！");
                         }
+                        // 导出rule_json中包含的枚举字段
+                        if (!MyAmRule.enumId.isEmpty()) {
+                            // 获取枚举字段记录：AM_ENUMERATE
+                            gts.tableName = "AM_ENUMERATE";
+                            String sqlString_enumId = "SELECT * FROM " + gts.tableName + " WHERE CLASS_PATH IN ("
+                                    + MyAmRule.enumId
+                                    + ") AND 1 = ?;";
+                            String[] paramStr_enumId = new String[1];
+                            paramStr_enumId[0] = "1";
+                            if (gts.getQuerySet(conn, sqlString_enumId, paramStr_enumId, dbconnector, log)) {
+                                log.logging(
+                                        gts.tableName + " 提取< " + getLen(MyAmRule.enumId) + " 个枚举值:"
+                                                + MyAmRule.enumId
+                                                + ">查询结果集导出成功！");
+                            }
+                            /*
+                             * 依据枚举类型业务字段，查询枚举字段的ID值
+                             */
+                            String sqlString_enumFieldId = "SELECT ID FROM " + gts.tableName + " WHERE CLASS_PATH IN ("
+                                    + MyAmRule.enumId
+                                    + ") AND 1 = ?;";
+                            String[] paramStr_enumFieldId = new String[1];
+                            paramStr_enumFieldId[0] = "1";
+                            // 获取枚举值记录的 ID
+                            List<String> colVal = gts.getQueryColVal(conn, sqlString_enumFieldId, paramStr_enumFieldId,
+                                    dbconnector, log);
+
+                            // 使用for循环获取枚举值记录ID拼接
+                            for (int i = 0; i < colVal.size(); i++) {
+                                MyAmRule.enumerate_Id = MyAmRule.appendValsSingle(MyAmRule.enumerate_Id, colVal.get(i));
+                            }
+                            log.logging("获取到" + getLen(MyAmRule.enumerate_Id) + " 个枚举值ID为：" + MyAmRule.enumerate_Id);
+                            gts.tableName = "AM_ENUMERATE_FIELD-enumVal";
+                            // 根据枚举值关联的ENUMERATE_ID查询，导出枚举值
+                            String sqlString_Id = "SELECT * FROM AM_ENUMERATE_FIELD WHERE ENUMERATE_ID IN ("
+                                    + MyAmRule.enumerate_Id
+                                    + ") AND 1 = ?;";
+                            String[] paramStr_enumerate_Id = new String[1];
+                            paramStr_enumerate_Id[0] = "1";
+                            if (gts.getQuerySet(conn, sqlString_Id, paramStr_enumerate_Id, dbconnector, log)) {
+                                log.logging(
+                                        gts.tableName + " 提取< " + getLen(MyAmRule.enumerate_Id) + " 个枚举值:"
+                                                + MyAmRule.enumerate_Id
+                                                + ">查询结果集导出成功！");
+                            }
+                        }
+
                     } else {
                         log.logging("未获取到业务字段或枚举字段！");
                     }
                     /**
                      * 判断结束依据,分析多次统计的必要性
                      */
+
                     if (calId.equals(MyAmRule.calId) && fieldId.equals(MyAmRule.fieldId)) {
                         isOver = true;
                     }
@@ -271,6 +319,7 @@ public class GetSQLFile {
 
     }
 
+    /* 获取以","分割的字符串的对象个数 */
     public static int getLen(String valId) {
         if (valId.length() == 0) {
             return 0;
@@ -278,16 +327,4 @@ public class GetSQLFile {
         return valId.split(",").length;
     }
 
-    /**
-     * 字符串数组转换为set用于集合计算
-     */
-    // public static HashSet<String> getSetFromString(String srcStr) {
-    // if (!srcStr.isEmpty()) {
-    // String[] strArr = srcStr.split(",");
-    // ArrayList<String> list = (ArrayList<String>) Arrays.asList(strArr);
-    // HashSet<String> set = new HashSet<>(list);
-    // return set;
-    // }
-    // return null;
-    // }
 }

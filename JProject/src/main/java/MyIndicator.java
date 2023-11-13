@@ -55,11 +55,12 @@ public class MyIndicator {
                                 MyAmRule.fieldId = MyAmRule.appendValsSingle(MyAmRule.fieldId, srcVal);
                             }
                         }
+                        // 枚举字段ID
                         if (srcType.equals("ENUM_VAR")) {
-                            if (MyAmRule.enumId.isEmpty() && !srcId.isEmpty()) {
-                                MyAmRule.enumId = "'" + srcId + "'";
-                            } else if (!MyAmRule.enumId.isEmpty() && !srcId.isEmpty()) {
-                                MyAmRule.enumId = MyAmRule.appendValsSingle(MyAmRule.enumId, srcId);
+                            if (MyAmRule.enumerate_Id.isEmpty() && !srcId.isEmpty()) {
+                                MyAmRule.enumerate_Id = "'" + srcId + "'";
+                            } else if (!MyAmRule.enumerate_Id.isEmpty() && !srcId.isEmpty()) {
+                                MyAmRule.enumerate_Id = MyAmRule.appendValsSingle(MyAmRule.enumerate_Id, srcId);
                             }
                         }
                     }

@@ -9,6 +9,9 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.JsonSyntaxException;
 
 public class GetTargetSet {
@@ -37,6 +40,29 @@ public class GetTargetSet {
         this.tableName = tableName;
     }
 
+    /*
+     * 单字段查询返回结果集
+     */
+    public List<String> getQueryColVal(Connection conn, String sqlString, String[] paramStr, DBConnector dbconnector,
+            LoggerLog log) {
+        // boolean isOracle = conn.toString().substring(0, 6).equals("oracle");
+        // boolean isMySQL = conn.toString().substring(0, 9).equals("com.mysql");
+        // boolean isDM = conn.toString().substring(0, 2).equals("dm");
+        List<String> colVal = new ArrayList<String>();
+
+        try {
+            ResultSet rs = dbconnector.QueryDB(conn, sqlString, paramStr, log);
+            GetColumns gcl = new GetColumns();
+            colVal = gcl.getColVals(rs, "ID", log);
+            rs.close();
+        } catch (SQLException e) {
+            log.logging(e.toString());
+        } catch (ClassNotFoundException e) {
+            log.logging(e.toString());
+        }
+        return colVal;
+    }
+
     /* 返回执行状态，查询am_rule 导出sql */
     public boolean getQuerySet(Connection conn, String sqlString, String[] paramStr, DBConnector dbconnector,
             LoggerLog log) {
@@ -45,6 +71,8 @@ public class GetTargetSet {
         boolean isDM = conn.toString().substring(0, 2).equals("dm");
         try {
             ResultSet rs = dbconnector.QueryDB(conn, sqlString, paramStr, log);
+
+            GetColumns gcl = new GetColumns();
             /**
              * if sqlfile directory is not exists ,create it
              */
@@ -54,11 +82,15 @@ public class GetTargetSet {
                     log.logging(sqlfile + " 目录创建成功");
                 }
             }
-            PrintWriter fos = new PrintWriter(sqlfile + "/" + this.tableName + ".sql", "utf-8");
             /**
              * generate the fiedlds fields sorted map
              */
-            GetColumns gcl = new GetColumns();
+
+            PrintWriter fos = new PrintWriter(sqlfile + "/" + this.tableName + ".sql", "utf-8");
+            // 对增量分类数据区分文件导出
+            if (this.tableName.contains("-")) {
+                this.tableName = this.tableName.split("-")[0];
+            }
             gcl.getColumns(rs, log);
             /**
              * generate the fiedlds columns
@@ -95,9 +127,9 @@ public class GetTargetSet {
                 fos.println(sqlBuilder.toString());
                 sqlBuilder = null;
             }
+            // 关闭流管道
             fos.close();
             rs.close();
-
         } catch (SQLException e) {
             log.logging(e.toString());
             return false;
@@ -111,6 +143,7 @@ public class GetTargetSet {
             log.logging(e.toString());
             return false;
         }
+
         return true;
     }
 

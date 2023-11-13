@@ -1,10 +1,25 @@
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
-
+import java.util.List;
 import java.sql.ResultSetMetaData;
 
 public class GetColumns {
+    /*
+     * Get single Sting type column value from ResultSet
+     */
+    public List<String> getColVals(ResultSet resultSet, String cloName, LoggerLog log) {
+        List<String> listVal = new ArrayList<String>();
+        try {
+            while (resultSet.next()) {
+                listVal.add(resultSet.getString(cloName));
+            }
+        } catch (SQLException e) {
+            log.logging(e.toString());
+        }
+        return listVal;
+    }
 
     /**
      * get and store column name and data type from ResultSet

@@ -8,6 +8,9 @@ public class MyAmRule {
     public static String nameListId = "";
     public static String fieldId = "";
     public static String enumId = "";
+    public static String enumerate_Id = "";
+    // enumerate_id
+    // public static String enumId_id = "";
 
     /* 解析规则中的rule_json，提取主体：字段、指标、名单 */
     public static void parseRuleJson(String rule_json, LoggerLog log) throws JsonSyntaxException {
@@ -21,14 +24,19 @@ public class MyAmRule {
          * 根据fieldSource分类，统计收集fieldValue（应去重），到对应的实体表查询
          */
         JsonObject targetJson;
-        String targetSource, targetValue;
+        String targetSource, targetValue, isFieldEnumeration;
         int i = 0;
         for (i = 0; i < conditionItems.size(); i++) {
             targetJson = JsonParser.parseString(conditionItems.get(i).toString()).getAsJsonObject();
             targetSource = targetJson.get("fieldSource").toString();
             targetValue = targetJson.get("fieldValue").toString();
+            // 判断是否枚举业务字段
+            isFieldEnumeration = targetJson.get("isFieldEnumeration").toString();
             targetSource = targetSource.substring(1, targetSource.length() - 1);
+            // 业务字段
             targetValue = targetValue.substring(1, targetValue.length() - 1);
+            // 枚举业务字段
+            isFieldEnumeration = isFieldEnumeration.substring(1, isFieldEnumeration.length() - 1);
             /**
              * 主体区分：指标、业务字段、名单
              */
@@ -46,12 +54,11 @@ public class MyAmRule {
                 } else if (!fieldId.isEmpty() && !targetValue.isEmpty()) {
                     fieldId = MyAmRule.appendValsSingle(fieldId, targetValue);
                 }
-                // log.logging("Source:" + targetSource + "; Value:" + targetValue);
             }
             /*
-             * 枚举字段
+             * 枚举字段判断，提取isFieldEnumeration="1"
              */
-            if (targetSource.equals("ENUM_VAR")) {
+            if (isFieldEnumeration.equals("1")) {
                 if (enumId.isEmpty() && !targetValue.isEmpty()) {
                     enumId = "'" + targetValue + "'";
                 } else if (!enumId.isEmpty() && !targetValue.isEmpty()) {
